@@ -27,10 +27,13 @@ buildGLM <- function(dataIn,maxRating,embedMeans,specialArgs){
   glmout <- glm(rating ~ userID + itemID, data = fixedData, family = binomial)
   #glmout <- glm(rating ~ userID, data = fixedData, family = binomial)
   #glmout <- glm(rating ~ itemID, data = fixedData, family = binomial)
+  
+  # Is this what we are supposed to return? how to parse preMethod? list?
   return(glmout)
   
 }
 
 predictGlm<-function(prosFitOut,newXs){
+  # TODO: need to build a matrix with maxRating
   pred <- predict.glm(glmout,utest,type = "prob") 
 }
