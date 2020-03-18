@@ -3,6 +3,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   dataIn$userID <- as.factor(dataIn$userID)
   dataIn$itemID <- as.factor(dataIn$itemID)
   if (predMethod=='kNN') {
+    #5-fold cross validation to choose k, will be added later
     
   }
   if (embedMeans){
@@ -20,7 +21,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 }
 
 predict.recProbs <- function(probsFitOut,predMethod,newXs){
-  
+  #this function needs to specify predmethod
   if (predMethod=='kNN') {
     library(knnflex)
     x <- rbind(probsFitOut[,1:2],newXs[,1:2])
@@ -49,3 +50,5 @@ new <- sample(1:nrow(output),1000)
 train <- output[sample,]
 newXs <- output[new,1:2]
 prob <- predict.recProbs(probsFitOut = train, predMethod = 'kNN',newXs = newXs)
+
+
