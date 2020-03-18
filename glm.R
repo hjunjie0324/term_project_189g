@@ -29,7 +29,9 @@ buildGLM <- function(dataIn,maxRating,embedMeans,specialArgs){
   #glmout <- glm(rating ~ itemID, data = fixedData, family = binomial)
   
   # Is this what we are supposed to return? how to parse preMethod? list?
-  return(glmout)
+  probsFitOut <- list(preMethod = preMethod,maxRating = maxRating, glmout = glmout)
+  class(probsFitOut) <- "recProbs"
+  return(probsFitOut)
   
 }
 
