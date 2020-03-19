@@ -48,6 +48,9 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
   }else if(preMehod == "kNN"){
     
   }else if(preMethod == "CART"){
+    if(!embedMeans){
+      stop("Error: invalid embedMean for CART\n")  
+    }
     if (embedMeans){
       #get the mean value for userid and itemid
       userMean <- tapply(dataIn$rating,dataIn$userID,mean)
