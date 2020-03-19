@@ -1,8 +1,19 @@
 ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
-  source(./GLM.R)
+  if(preMehtod == "logit"){
+   
+  }else if(preMethod == "NMF"){
+    if(embedMeans){
+      stop("Error: invalid embedMean for NMF\n")  
+    }
+   
+  }else if(preMehod == "kNN"){
+    
+  }else if(preMethod == "CART"){
+    if(!embedMeans){
+      stop("Error: invalid embedMean for CART\n")  
+    }
+  }
   
-  probsFitOut <- switch(preMethod, "logit" = buildGLM(dataIn,maxRating,embedMeans,specialArgs),
-                        "knn" = (),"NMF" = (),"CART" = ())
   return(probsFitOut)
 }
 
@@ -17,8 +28,15 @@ predict.recProbs <- function(probsFitOut,newXs){
   }
   
   
-  preds<-switch(predMehod, "logit" = predictGlm(probsFitOut,newXs),
-                "knn" = (),"NMF" = (),"CART" = ())
+  if(preMehtod == "logit"){
+   
+  }else if(preMethod == "NMF"){
+   
+  }else if(preMehod == "kNN"){
+    
+  }else if(preMethod == "CART"){
+    
+  }
   
   return(preds)
 }
