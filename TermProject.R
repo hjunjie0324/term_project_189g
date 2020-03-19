@@ -62,7 +62,27 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
     if(!embedMeans){
       stop("Error: invalid embedMean for CART\n")  
     }
-  }
+    if (embedMeans){
+      #get the mean value for userid and itemid
+      userMean <- tapply(dataIn$rating,dataIn$userID,mean)
+      itemMean <- tapply(dataIn$rating,dataIn$itemID,mean)
+      emb <- dataIn
+      emb$userID <- userMean[dataIn$userID]
+      emb$itemID <- itemMean[dataIn$itemID]
+      emb$userID <- as.vector(emb$userID)
+      emb$itemID <- as.vector(emb$itemID）
+    } 
+    #cross validation  
+    sample <- sample(1:nrow(emb),5000)
+    new <- sample(1:nrow(emb),1000)
+    train <- emb[sample,]
+    newXs <- emb[new,]
+    ctout <- ctree(as.factor(rating)~., data=train) #, control=ctree_control(minsplit=2,maxdepth=3,testtype="Teststatistic"))
+    dtree <- rpart(as.factor(rating)~.,data=train, method="class",control = rpart.control(cp = 0))  #, maxdepth =20,minsplite=3, minbucket=6
+    tree<-prune(dtree,cp=dtree$cptable[which.min(dtree$cptable[,"xerror"]),"CP"])
+    probsFitOut <- list(predMethod = "CART", maxRating = maxRating, lst = tree, newXs = newXs)
+    class(probsFitOut) <- 'recProbs'                           
+  }  
   
   return(probsFitOut)
 }
@@ -116,7 +136,22 @@ predict.recProbs <- function(probsFitOut,newXs){
   }else if(probsFitOut$preMehtod == "kNN"){
     
   }else if(probsFitOut$preMehtod == "CART"){
-    
+    #prune
+    #printcp(tree)
+    #plotcp(tree)
+    #rpart.plot(dtree,branch=1,type=5, fallen.leaves=T,cex=0.8, sub="no prune")
+    #rpart.plot(tree,branch=1, type=2,fallen.leaves=T,cex=0.8, sub="prune")
+    test <- probFitOut$newXs
+    tree <- probFitOut$lst
+    t_pred2 <- predict(tree,test)
+    t_expect <- t_pred2%*%c(1,2,3,4,5)
+    t_mape <- mean(abs(t_expect-test[,3]))
+    t_predtree<-predict(tree,test,type="class")
+    t_acc <- count(t_predtree==test[,3])[2,2]/nrow(test)
+    #confusionMatrix(table(t_predtree,test$ratings))
+    #max_acc <- max(c(ct_acc2,dt_acc,t_acc))
+    #min_mape <- min(c(ct_mape,dt_mape,t_mape))
+    preds <- t_pred2
   }
   
   return(preds)

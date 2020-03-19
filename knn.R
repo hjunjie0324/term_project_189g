@@ -8,10 +8,10 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
     userMean <- tapply(dataIn$rating,dataIn$userID,mean)
     itemMean <- tapply(dataIn$rating,dataIn$itemID,mean)
     emb <- dataIn
-    emb$usermean <- userMean[dataIn$userID]
-    emb$itemmean <- itemMean[dataIn$itemID]
-    emb$usermean <- as.vector(emb$usermean)
-    emb$itemmean <- as.vector(emb$itemmean)
+    emb$userID <- userMean[dataIn$userID]
+    emb$itemID <- itemMean[dataIn$itemID]
+    emb$userID <- as.vector(emb$userID)
+    emb$itemID <- as.vector(emb$itemID)
     result <- emb
   }
   
@@ -28,8 +28,8 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
     
     for(i in 1:5){
       testIndexes <- which(folds==i,arr.ind = TRUE)
-      testData <- xtest[testIndexes, 4:5]
-      trainData <- xtest[-testIndexes, 4:5]
+      testData <- xtest[testIndexes, 1:2]
+      trainData <- xtest[-testIndexes, 1:2]
       data <- rbind(trainData,testData)
       kdist <- knn.dist(data)
       cl <- dataIn$rating[xsample]
@@ -60,16 +60,16 @@ predict.recProbs <- function(probsFitOut,newXs){
     userMean <- tapply(newXs$rating,newXs$userID,mean)
     itemMean <- tapply(newXs$rating,newXs$itemID,mean)
     emb <- newXs
-    emb$usermean <- userMean[newXs$userID]
-    emb$itemmean <- itemMean[newXs$itemID]
-    emb$usermean <- as.vector(emb$usermean)
-    emb$itemmean <- as.vector(emb$itemmean)
+    emb$userID <- userMean[newXs$userID]
+    emb$itemID <- itemMean[newXs$itemID]
+    emb$userID <- as.vector(emb$userID)
+    emb$itemID <- as.vector(emb$itemID)
     
-    output <- probsFitOut$dataIn[,4:5]
+    output <- probsFitOut$dataIn[,1:2]
     sample <- sample(1:nrow(output),5000) 
     train <- output[sample,]
     #5000 ratings where chosen as train data
-    x <- rbind(train,emb[,4:5])
+    x <- rbind(train,emb[,1:2])
     kdist <- knn.dist(x)
     cltrn <- probsFitOut$dataIn$rating[sample]
     cltst <- newXs$rating
