@@ -1,6 +1,6 @@
 library(regtools)
 
-buildGLM <- function(dataIn,maxRating,embedMeans,specialArgs){
+buildGLM <- function(dataIn,maxRating,embedMeans){
   dataIn <- read.csv(dataIn)
   colnames(dataIn) <- c("userID", "itemID", "rating")
   lst <- as.list(NULL)
