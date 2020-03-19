@@ -9,16 +9,16 @@ library(caret)
 library(car)
 library(plyr)
 
-ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
+ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   colnames(dataIn) <- c("userID", "itemID", "rating")
-  if(preMehtod == "logit"){
+  if(predMethod == "logit"){
     lst <- as.list(NULL)
     
     # Check if need to replace userId and itemID by means
     if(embedMeans){
       user_mean <- tapply(dataIn$rating, dataIn$userID, mean)
       item_mean <- tapply(dataIn$rating, dataIn$itemID, mean)
-
+      
       for(i in (1:nrow(dataIn))){
         user <-dataIn[i,1]
         item <-dataIn[i,2]
@@ -32,23 +32,23 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
       fixedRating <- as.integer(dataIn$rating == i)
       fixedRating <- as.factor(fixedRating)
       fixedData <- data.frame(dataIn[1:2],fixedRating)
-
+      
       memory.limit(size = 160000)
-
+      
       test<-sample(1:nrow(fixedData),0.05*nrow(fixedData))
       utest<-fixedData[test,]
       utrain<-fixedData[-test,]
-
+      
       glmout <- glm(fixedRating ~ userID + itemID, data = utrain, family = binomial)
       # store the single-rating-model to a list
       lst[[i]] <- glmout
-
+      
     }
     # store necessary values in a list for later use
     probsFitOut <- list(predMethod = "logit", maxRating = maxRating,lst = lst,dataIn = dataIn)
     class(probsFitOut)<-"recProbs" # make it to to be a class object
-
-  }else if(preMethod == "NMF"){
+    
+  }else if(predMethod == "NMF"){
     if(embedMeans){
       stop("Error: invalid embedMean for NMF\n")  
     }
@@ -63,12 +63,12 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
     
     probsFitOut <- list(predMethod = "NMF", maxRating = maxRating,dataIn = dataIn)
     class(probsFitOut)<-"recProbs" # make it to to be a class object
-   
-  }else if(preMehod == "kNN"){
+    
+  }else if(predMethod == "kNN"){
     colnames(dataIn) <- c('userID','itemID','rating')
+    tmp <- dataIn
     dataIn$userID <- as.factor(dataIn$userID)
     dataIn$itemID <- as.factor(dataIn$itemID)
-
     if (embedMeans){
       userMean <- tapply(dataIn$rating,dataIn$userID,mean)
       itemMean <- tapply(dataIn$rating,dataIn$itemID,mean)
@@ -106,10 +106,10 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
       
     }
     k1 <- which.min(err)
-    probsFitOut <- list(predMethod='kNN',dataIn=result,k=k1+2,dataIn = dataIn)
+    probsFitOut <- list(predMethod='kNN',dataIn=tmp,k=k1+2)
     class(probsFitOut) <- 'recProbs'
     
-  }else if(preMethod == "CART"){
+  }else if(predMethod == "CART"){
     
     if (embedMeans){
       colnames(dataIn) <- c('userID','itemID','rating')
@@ -122,7 +122,7 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
       emb$userID <- userMean[dataIn$userID]
       emb$itemID <- itemMean[dataIn$itemID]
       emb$userID <- as.vector(emb$userID)
-      emb$itemID <- as.vector(emb$itemID）
+      emb$itemID <- as.vector(emb$itemID)
     } 
     #cross validation  
     sample <- sample(1:nrow(emb),5000)
@@ -132,7 +132,7 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
     ctout <- ctree(as.factor(rating)~., data=train) #, control=ctree_control(minsplit=2,maxdepth=3,testtype="Teststatistic"))
     dtree <- rpart(as.factor(rating)~.,data=train, method="class",control = rpart.control(cp = 0))  #, maxdepth =20,minsplite=3, minbucket=6
     tree<-prune(dtree,cp=dtree$cptable[which.min(dtree$cptable[,"xerror"]),"CP"])
-    probsFitOut <- list(predMethod = "CART", maxRating = maxRating, lst = tree)
+    probsFitOut <- list(predMethod = "CART", maxRating = maxRating, lst = tree,dataIn = dataIn)
     class(probsFitOut) <- 'recProbs'                           
   }  
   
@@ -149,15 +149,15 @@ predict.recProbs <- function(probsFitOut,newXs){
     stop("ERROR: NEW USER OR NEW ITEM\n") 
   }
   
-  if(probsFitOut$preMehtod == "logit"){
+  if(probsFitOut$predMethod == "logit"){
     preds <- NULL
     for(i in 1: probsFitOut$maxRating){
       pred <- predict.glm(probsFitOut$lst[[i]],newXs,type = "response")
       preds <- cbind(preds,pred)
-  }
+    }
     colnames(preds)<-(1:probsFitOut$maxRating)
-   
-  }else if(probsFitOut$preMehtod == "NMF"){
+    
+  }else if(probsFitOut$predMethod == "NMF"){
     col_name<-c('rating1','rating2','rating3','rating4','rating5')
     r=Reco()
     maxRating<=probsFitOut$maxRaing
@@ -184,10 +184,11 @@ predict.recProbs <- function(probsFitOut,newXs){
     }
     names(result)[3:ncol(result)]<-col_name[1:maxRating]
     preds<-result
-   
-  }else if(probsFitOut$preMehtod == "kNN"){
-    library(knnflex)
     
+  }else if(probsFitOut$predMethod == "kNN"){
+    library(knnflex)
+    newXs$userID <- as.factor(newXs$userID)
+    newXs$itemID <- as.factor(newXs$itemID)
     userMean <- tapply(newXs$rating,newXs$userID,mean)
     itemMean <- tapply(newXs$rating,newXs$itemID,mean)
     emb <- newXs
@@ -206,29 +207,29 @@ predict.recProbs <- function(probsFitOut,newXs){
     cltst <- newXs$rating
     nrtrn <- nrow(train)
     nrtst <- nrow(newXs)
-    pred <- knn.predict(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=probFitOut$k)
-    knnout <- knn.probability(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=probFitOut$k)
-    predes <- data.frame(t(knnout))
+    pred <- knn.predict(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=probsFitOut$k)
+    knnout <- knn.probability(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=probsFitOut$k)
+    preds <- data.frame(t(knnout))
     colnames(preds) <- c(1,2,3,4,5)
-  }else if(probsFitOut$preMehtod == "CART"){
+  }else if(probsFitOut$predMethod == "CART"){
     #prune
     #printcp(tree)
     #plotcp(tree)
     #rpart.plot(dtree,branch=1,type=5, fallen.leaves=T,cex=0.8, sub="no prune")
     #rpart.plot(tree,branch=1, type=2,fallen.leaves=T,cex=0.8, sub="prune")
- 
+    
     newXs$userID <- as.factor(newXs$userID)
     newXs$itemID <- as.factor(newXs$itemID)
     userMean <- tapply(newXs$rating,newXs$userID,mean)
     itemMean <- tapply(newXs$rating,newXs$itemID,mean)
     emb <- newXs
-    emb$usermean <- userMean[newXs$userID]
-    emb$itemmean <- itemMean[newXs$itemID]
-    emb$usermean <- as.vector(emb$usermean)
-    emb$itemmean <- as.vector(emb$itemmean)
+    emb$userID <- userMean[newXs$userID]
+    emb$itemID <- itemMean[newXs$itemID]
+    emb$userID <- as.vector(emb$userID)
+    emb$itemID <- as.vector(emb$itemID)
     test <- emb
-    tree <- probFitOut$lst
-    t_pred2 <- predict(tree,test)
+    tree <- probsFitOut$lst
+    t_pred2 <- predict(tree,test[,-3])
     t_expect <- t_pred2%*%c(1,2,3,4,5)
     t_mape <- mean(abs(t_expect-test[,3]))
     t_predtree<-predict(tree,test,type="class")
@@ -241,7 +242,29 @@ predict.recProbs <- function(probsFitOut,newXs){
   
   return(preds)
 }
+
+
+library(regtools)
+
+setwd('C:/omsi-master')
+
+dataIn<- read.csv('songsDataset.csv')
+colnames(dataIn) <- c("userID", "itemID", "rating")
+
+ppp <- ratingProbsFit(dataIn,5,"kNN",TRUE,10)
+
+## tester for CART and kNN
 new <- sample(1:nrow(dataIn),1000)
 newXs <- dataIn[new,]
 colnames(newXs) <- c('userID','itemID','rating')
+###
+
+#tester for glm and nmf
+#newXs <- data.frame(userID = 0,itemID = 7171)
+
+#newXs$userID <- as.integer(newXs$userID)
+#newXs$itemID <- as.integer(newXs$itemID)
+#####
+a<-predict.recProbs(ppp,newXs)
+a
 
