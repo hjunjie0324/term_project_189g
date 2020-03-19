@@ -23,7 +23,7 @@ buildGLM <- function(dataIn,maxRating,embedMeans,specialArgs){
     
     memory.limit(size = 160000)
     
-    test<-sample(1:nrow(dataIn),5000)
+    test<-sample(1:nrow(dataIn),0.05*nrow(dataIn))
     utest<-dataIn[test,]
     utrain<-dataIn[-test,]
     
