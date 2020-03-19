@@ -19,10 +19,10 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
 
 predict.recProbs <- function(probsFitOut,newXs){
   # source: https://www.rdocumentation.org/packages/prob/versions/1.0-1/topics/setdiff
-  isNewUser = setdiff(newXs$userID,probsFitOut$dataIN$userID)
-  isNewItem = setdiff(newXs$itemID,probsFitOut$dataIN$itemID)
+  isNewUser = setdiff(newXs$userID,probsFitOut$dataIn$userID)
+  isNewItem = setdiff(newXs$itemID,probsFitOut$dataIn$itemID)
   
-  if(isNewUser != 0 || isNewItem != 0){
+  if(!identical(isNewUser,integer(0)) || !identical(isNewItem,integer(0))){
     # source:https://stat.ethz.ch/R-manual/R-devel/library/base/html/stop.html
     stop("ERROR: NEW USER OR NEW ITEM\n") 
   }
