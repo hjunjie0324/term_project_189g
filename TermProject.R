@@ -58,7 +58,6 @@ predict.recProbs <- function(probsFitOut,newXs){
     stop("ERROR: NEW USER OR NEW ITEM\n") 
   }
   
-  
   if(probsFitOut$preMehtod == "logit"){
     preds <- NULL
     for(i in 1: probsFitOut$maxRating){
