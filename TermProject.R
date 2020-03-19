@@ -1,3 +1,6 @@
+library(recosystem)
+library(regtools)
+
 ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
   if(preMehtod == "logit"){
     lst <- as.list(NULL)
