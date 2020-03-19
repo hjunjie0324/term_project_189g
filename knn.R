@@ -1,39 +1,89 @@
+
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   colnames(dataIn) <- c('userID','itemID','rating')
   dataIn$userID <- as.factor(dataIn$userID)
   dataIn$itemID <- as.factor(dataIn$itemID)
-  if (predMethod=='kNN') {
-    #5-fold cross validation to choose k, will be added later
-    
-  }
+  
   if (embedMeans){
     userMean <- tapply(dataIn$rating,dataIn$userID,mean)
     itemMean <- tapply(dataIn$rating,dataIn$itemID,mean)
     emb <- dataIn
-    emb$userID <- userMean[dataIn$userID]
-    emb$itemID <- itemMean[dataIn$itemID]
-    emb$userID <- as.vector(emb$userID)
-    emb$itemID <- as.vector(emb$itemID)
+    emb$usermean <- userMean[dataIn$userID]
+    emb$itemmean <- itemMean[dataIn$itemID]
+    emb$usermean <- as.vector(emb$usermean)
+    emb$itemmean <- as.vector(emb$itemmean)
     result <- emb
   }
-  class(result) <- 'recProbs'
-  return(result)
-}
-
-predict.recProbs <- function(probsFitOut,predMethod,newXs){
-  #this function needs to specify predmethod
+  
   if (predMethod=='kNN') {
     library(knnflex)
-    x <- rbind(probsFitOut[,1:2],newXs[,1:2])
+    #5-fold cross validation to choose k
+    num <- 5000
+    xsample <- sample(1:nrow(result),num)
+    xtest <- result[xsample,]
+    xtest<-xtest[sample(nrow(xtest)),]
+    folds<-cut(seq(1,nrow(xtest)),breaks = 5,labels = FALSE)
+    err <- rep(0,5)
+    acc <- rep(0,5)
+    
+    for(i in 1:5){
+      testIndexes <- which(folds==i,arr.ind = TRUE)
+      testData <- xtest[testIndexes, 4:5]
+      trainData <- xtest[-testIndexes, 4:5]
+      data <- rbind(trainData,testData)
+      kdist <- knn.dist(data)
+      cl <- dataIn$rating[xsample]
+      cltrn <- cl[-testIndexes]
+      cltst <- cl[testIndexes]
+      pred <- knn.predict(1:(num*0.8),(num*0.8+1):num, cltrn, kdist, k=i+2)
+      knnout <- knn.probability(1:(num*0.8),(num*0.8+1):num, cltrn, kdist, k=i+2)
+      knnout <- data.frame(t(knnout))
+      colnames(knnout) <- c(1,2,3,4,5)
+      err[i] <- mean(abs(pred-cltst))
+      
+    }
+    k1 <- which.min(err)
+    
+    
+    probsFitOut <- list(predMethod='kNN',dataIn=result,k=k1+2)
+  }
+  
+  class(probsFitOut) <- 'recProbs'
+  return(probsFitOut)
+}
+
+predict.recProbs <- function(probsFitOut,newXs){
+  
+  if (probsFitOut$predMethod=='kNN') {
+    library(knnflex)
+    
+    userMean <- tapply(newXs$rating,newXs$userID,mean)
+    itemMean <- tapply(newXs$rating,newXs$itemID,mean)
+    emb <- newXs
+    emb$usermean <- userMean[newXs$userID]
+    emb$itemmean <- itemMean[newXs$itemID]
+    emb$usermean <- as.vector(emb$usermean)
+    emb$itemmean <- as.vector(emb$itemmean)
+    
+    output <- probsFitOut$dataIn[,4:5]
+    sample <- sample(1:nrow(output),5000) 
+    train <- output[sample,]
+    #5000 ratings where chosen as train data
+    x <- rbind(train,emb[,4:5])
     kdist <- knn.dist(x)
-    cltrn <- probsFitOut[,3]
-    #cltst <- newXs$rating
-    nrtrn <- nrow(probsFitOut)
+    cltrn <- probsFitOut$dataIn$rating[sample]
+    cltst <- newXs$rating
+    nrtrn <- nrow(train)
     nrtst <- nrow(newXs)
-    pred <- knn.predict(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=3)
-    knnout <- knn.probability(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=3)
+    pred <- knn.predict(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=probFitOut$k)
+    knnout <- knn.probability(1:nrtrn, (nrtrn+1):(nrtrn+nrtst), cltrn, kdist, k=probFitOut$k)
     knnout <- data.frame(t(knnout))
     colnames(knnout) <- c(1,2,3,4,5)
+    
+    MAPE <- mean(abs(pred-cltst))
+    preds <- round(pred)
+    acc <- sum(preds==cltst)/nrow(newXs)
+    
     return(knnout)
   }
 }
@@ -43,12 +93,24 @@ predict.recProbs <- function(probsFitOut,predMethod,newXs){
 library(lme4)
 data(InstEval)
 dataIn <- InstEval[,c(1,2,7)]
+
+
+#setwd('D:/UCD/ECS189G/HW/Final')
+#song <- read.table('songsDataset.csv',sep=',',header = TRUE)
+#head(song)
+#dataIn <- song
+
 probFitOut <- ratingProbsFit(dataIn = dataIn, maxRating = 5,predMethod = 'kNN',embedMeans = TRUE)
-output <- cbind.data.frame(probFitOut$userID,probFitOut$itemID,probFitOut$rating)
-sample <- sample(1:nrow(output),5000)
-new <- sample(1:nrow(output),1000)
-train <- output[sample,]
-newXs <- output[new,1:2]
-prob <- predict.recProbs(probsFitOut = train, predMethod = 'kNN',newXs = newXs)
+
+new <- sample(1:nrow(dataIn),1000)
+newXs <- dataIn[new,]
+colnames(newXs) <- c('userID','itemID','rating')
+
+prob <- predict.recProbs(probsFitOut = probFitOut, newXs = newXs)
+
+
+
+
+
 
 
