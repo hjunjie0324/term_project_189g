@@ -123,7 +123,7 @@ predict.recProbs <- function(probsFitOut,newXs){
       test_set=data_memory(test$userID,test$itemID,index1 = TRUE)
       pred=r$predict(test_set,out_memory())
       
-      result<-cbind(result,pred)
+      preds<-cbind(result,pred)
     }
     #scale
     rs<-rowSums(result[,3:ncol(result)])
