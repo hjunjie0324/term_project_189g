@@ -28,13 +28,13 @@ predict.recProbs <- function(probsFitOut,newXs){
   }
   
   
-  if(preMehtod == "logit"){
+  if(probsFitOut$preMehtod == "logit"){
    
-  }else if(preMethod == "NMF"){
+  }else if(probsFitOut$preMehtod == "NMF"){
    
-  }else if(preMehod == "kNN"){
+  }else if(probsFitOut$preMehtod == "kNN"){
     
-  }else if(preMethod == "CART"){
+  }else if(probsFitOut$preMehtod == "CART"){
     
   }
   
