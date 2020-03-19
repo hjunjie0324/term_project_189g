@@ -3,6 +3,7 @@ library(regtools)
 buildGLM <- function(dataIn,maxRating,embedMeans,specialArgs){
   dataIn <- read.csv(dataIn)
   colnames(dataIn) <- c("userID", "itemID", "rating")
+  lst <- as.list(NULL)
   
   if(embedMeans == T){
     user_mean <- tapply(dataIn$rating, dataIn$userID, mean)
@@ -16,26 +17,32 @@ buildGLM <- function(dataIn,maxRating,embedMeans,specialArgs){
     }
   }
   
-  #dataIn$userID <- factorToDummies(dataIn$userID,'user')
-  #dataIn$itemID <- factorToDummies(dataIn$itemID,'item')
+  for(i in 1: maxRating){
+    fixedRating <- as.factor(dataIn$rating == i)
+    fixedData <- data.frame(dataIn[1:2],fixedRating)
+    
+    memory.limit(size = 160000)
+    
+    test<-sample(1:nrow(dataIn),5000)
+    utest<-dataIn[test,]
+    utrain<-dataIn[-test,]
+    
+    glmout <- glm(rating ~ userID + itemID, data = utrain, family = binomial)
+    lst[[i]] <- glmout
+    
+  }
   
-  dummyR <- as.factor(dataIn$rating)
-  dummyR <- factorToDummies(dummyR,'rating')
   
-  fixedData <- data.frame(dataIn[1:2],dummyR)
-  
-  glmout <- glm(rating ~ userID + itemID, data = fixedData, family = binomial)
-  #glmout <- glm(rating ~ userID, data = fixedData, family = binomial)
-  #glmout <- glm(rating ~ itemID, data = fixedData, family = binomial)
-  
-  # Is this what we are supposed to return? how to parse preMethod? list?
-  probsFitOut <- list(preMethod = preMethod,maxRating = maxRating, glmout = glmout)
-  class(probsFitOut) <- "recProbs"
+  probsFitOut <- list(predMethod = "logit", maxRating = maxRating,lst = lst,dataIn = dataIn)
+  class(probsFitOut)<-"recProbs"
   return(probsFitOut)
   
 }
 
 predictGlm<-function(prosFitOut,newXs){
-  # TODO: need to build a matrix with maxRating
-  pred <- predict.glm(glmout,utest,type = "prob") 
+  for(i in 1: maxRating){
+    pred <- predict.glm(probFitOut$lst[[i]],newXs,type = "response")
+    predlist <- cbind(predlist,pred)
+  }
+  return(predlist)
 }
