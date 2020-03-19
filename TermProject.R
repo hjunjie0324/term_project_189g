@@ -7,9 +7,6 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
 }
 
 predict.recProbs <- function(probsFitOut,newXs){
-# TODO: 1. Check no new user nor new item
-#       2. Build the required output matrix, probably in subclasses.
-#       3. Parse the preMethod from probsFitOut, making list??
   # source: https://www.rdocumentation.org/packages/prob/versions/1.0-1/topics/setdiff
   isNewUser = setdiff(newXs$userID,probsFitOut$dataIN$userID)
   isNewItem = setdiff(newXs$itemID,probsFitOut$dataIN$itemID)
