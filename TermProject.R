@@ -2,6 +2,7 @@ library(recosystem)
 library(regtools)
 
 ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
+  colnames(dataIn) <- c("userID", "itemID", "rating")
   if(preMehtod == "logit"){
     lst <- as.list(NULL)
     
