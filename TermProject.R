@@ -265,6 +265,5 @@ colnames(newXs) <- c('userID','itemID','rating')
 #newXs$userID <- as.integer(newXs$userID)
 #newXs$itemID <- as.integer(newXs$itemID)
 #####
-a<-predict.recProbs(ppp,newXs)
-a
-
+aa<-predict.recProbs(ppp,newXs)
+aa
