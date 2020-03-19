@@ -29,8 +29,6 @@ ratingProbsFit <- function(dataIn,maxRating,preMethod,embedMeans,specialArgs){
     lst[[i]] <- glmout
     
   }
-  
-  
   probsFitOut <- list(predMethod = "logit", maxRating = maxRating,lst = lst,dataIn = dataIn)
   class(probsFitOut)<-"recProbs"
 
